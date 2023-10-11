@@ -38,13 +38,17 @@ server.on('request', (req, res) => {
           return;
         });
       });
-      req.pipe(limitedStream).pipe(writeStream).on('end', ()=>{
+
+      req.pipe(limitedStream).pipe(writeStream);
+
+      writeStream.on('finish', ()=>{
         res.statusCode = 201;
         res.end();
+        return;
       });
 
       req.on('close', ()=>{
-        limitedStream.destroy();
+        // limitedStream.destroy();
 
         fs.unlink(filepath, (err) => {
           if (err) throw err;
