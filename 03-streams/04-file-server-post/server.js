@@ -1,4 +1,3 @@
-const url = require('url');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
@@ -26,8 +25,10 @@ server.on('request', (req, res) => {
         res.end();
         return;
       }
+
       const limitedStream = new LimitSizeStream({limit: MEGIBITE});
       const writeStream = fs.createWriteStream(filepath);
+      let isFileLoaded = false; // я думаю должно быть более лакончиное решение?
 
       limitedStream.on('error', ()=>{
         fs.unlink(filepath, (err) => {
@@ -42,21 +43,23 @@ server.on('request', (req, res) => {
       req.pipe(limitedStream).pipe(writeStream);
 
       writeStream.on('finish', ()=>{
+        isFileLoaded = true;
         res.statusCode = 201;
         res.end();
-        return;
       });
 
-      req.on('close', ()=>{
-        // limitedStream.destroy();
+      req.on('close', (...args)=>{
+        limitedStream.destroy();
 
-        fs.unlink(filepath, (err) => {
-          if (err) throw err;
+        if (!isFileLoaded) {
+          fs.unlink(filepath, (err) => {
+            if (err) throw err;
 
-          res.statusCode = 500;
-          res.end();
-          return;
-        });
+            res.statusCode = 500;
+            res.end();
+            return;
+          });
+        }
       });
       break;
 
