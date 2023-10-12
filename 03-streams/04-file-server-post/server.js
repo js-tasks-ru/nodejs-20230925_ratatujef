@@ -4,12 +4,11 @@ const fs = require('fs');
 const LimitSizeStream = require('./LimitSizeStream');
 
 const server = new http.Server();
-const MEGIBITE = 1000000;
+const MEGABITE = 1000000;
 
 server.on('request', (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const pathname = url.pathname.slice(1);
-
   const filepath = path.join(__dirname, 'files', pathname);
 
   switch (req.method) {
@@ -26,9 +25,9 @@ server.on('request', (req, res) => {
         return;
       }
 
-      const limitedStream = new LimitSizeStream({limit: MEGIBITE});
+      const limitedStream = new LimitSizeStream({limit: MEGABITE});
       const writeStream = fs.createWriteStream(filepath);
-      let isFileLoaded = false; // я думаю должно быть более лакончиное решение?
+      let isFileloading= true; // я думаю должно быть более лакончиное решение?
 
       limitedStream.on('error', ()=>{
         fs.unlink(filepath, (err) => {
@@ -36,28 +35,27 @@ server.on('request', (req, res) => {
 
           res.statusCode = 413;
           res.end();
-          return;
+          isFileloading= true;
         });
       });
 
       req.pipe(limitedStream).pipe(writeStream);
 
       writeStream.on('finish', ()=>{
-        isFileLoaded = true;
+        isFileloading = false;
         res.statusCode = 201;
         res.end();
       });
 
-      req.on('close', (...args)=>{
+      req.on('close', ()=>{
         limitedStream.destroy();
 
-        if (!isFileLoaded) {
+        if (isFileloading) {
           fs.unlink(filepath, (err) => {
             if (err) throw err;
 
             res.statusCode = 500;
             res.end();
-            return;
           });
         }
       });
