@@ -48,6 +48,7 @@ server.on('request', (req, res) => {
             res.end();
           });
         }
+        return;
       });
 
       writeStream.on('finish', ()=>{
