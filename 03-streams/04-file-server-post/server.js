@@ -55,18 +55,6 @@ server.on('request', (req, res) => {
         res.end();
       });
 
-      // writeStream.on('end', ()=>{
-      //   console.log('end');
-      //   // if (writeStream.writableAborted) {
-      //   //   fs.unlink(filepath, (err) => {
-      //   //     if (err) throw err;
-
-      //   //     res.statusCode = 500;
-      //   //     res.end();
-      //   //   });
-      //   // }
-      // });
-
       writeStream.on('error', (err)=>{
         console.warn('error');
       });
