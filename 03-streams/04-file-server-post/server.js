@@ -27,7 +27,6 @@ server.on('request', (req, res) => {
 
       const limitedStream = new LimitSizeStream({limit: MEGABITE});
       const writeStream = fs.createWriteStream(filepath);
-      let isFileloading= true; // я думаю должно быть более лакончиное решение?
 
       limitedStream.on('error', ()=>{
         fs.unlink(filepath, (err) => {
@@ -42,15 +41,12 @@ server.on('request', (req, res) => {
       req.pipe(limitedStream).pipe(writeStream);
 
       writeStream.on('finish', ()=>{
-        isFileloading = false;
         res.statusCode = 201;
         res.end();
       });
 
-      req.on('close', ()=>{
-        limitedStream.destroy();
-
-        if (isFileloading) {
+      writeStream.on('error', ()=>{
+        if (!writeStream.writableFinished) {
           fs.unlink(filepath, (err) => {
             if (err) throw err;
 
@@ -58,6 +54,13 @@ server.on('request', (req, res) => {
             res.end();
           });
         }
+      });
+
+      req.on('close', ()=>{
+        if (!writeStream.writableFinished) {
+          writeStream.emit('error');
+        }
+        writeStream.destroy();
       });
       break;
 
