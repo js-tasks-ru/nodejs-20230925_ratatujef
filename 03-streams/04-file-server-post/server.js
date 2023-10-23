@@ -34,18 +34,12 @@ server.on('request', (req, res) => {
 
           res.statusCode = 413;
           res.end();
-          isFileloading= true;
         });
       });
 
       req.pipe(limitedStream).pipe(writeStream);
 
-      writeStream.on('finish', ()=>{
-        res.statusCode = 201;
-        res.end();
-      });
-
-      writeStream.on('error', ()=>{
+      writeStream.on('close', ()=>{
         if (!writeStream.writableFinished) {
           fs.unlink(filepath, (err) => {
             if (err) throw err;
@@ -56,12 +50,31 @@ server.on('request', (req, res) => {
         }
       });
 
+      writeStream.on('finish', ()=>{
+        res.statusCode = 201;
+        res.end();
+      });
+
+      // writeStream.on('end', ()=>{
+      //   console.log('end');
+      //   // if (writeStream.writableAborted) {
+      //   //   fs.unlink(filepath, (err) => {
+      //   //     if (err) throw err;
+
+      //   //     res.statusCode = 500;
+      //   //     res.end();
+      //   //   });
+      //   // }
+      // });
+
+      writeStream.on('error', (err)=>{
+        console.warn('error');
+      });
+
       req.on('close', ()=>{
-        if (!writeStream.writableFinished) {
-          writeStream.emit('error');
-        }
         writeStream.destroy();
       });
+
       break;
 
     default:
