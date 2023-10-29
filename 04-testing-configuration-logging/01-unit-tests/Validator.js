@@ -34,6 +34,7 @@ module.exports = class Validator {
           if (value.length > rules.max) {
             errors.push({field, error: `too long, expect ${rules.max}, got ${value.length}`});
           }
+
           break;
         case 'number':
           if (value < rules.min) {
